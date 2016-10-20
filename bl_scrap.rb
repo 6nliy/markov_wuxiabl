@@ -2,7 +2,8 @@
 require 'capybara'
 require 'date'
 require "pry"
-
+require 'HTTParty'
+require 'Nokogiri'
 
 Capybara.register_driver :poltergeist do |app|
  Capybara::Poltergeist::Driver.new(app, {js_errors: false, phantomjs_options: ['--load-images=no'], timeout: 60})
@@ -39,6 +40,26 @@ allurl = []
 end
 
 File.open('bl_story_urls.mar', 'w') { |f| f.write(Marshal.dump(allurl)) }
-browser.visit allurl[0]
+
+novelurl = []
+
+def get_parse(url)
+  page = HTTParty.get(url)
+  parse_page = Nokogiri::HTML(page)
+  return parse_page
+end
 
 
+allurl.each do |url|
+  puts url
+  page = HTTParty.get(url)
+  parse_page = Nokogiri::HTML(page)
+  parse_page.css('div.clear').css('a').each do | atag |
+    puts atag.attr('href')
+    novelurl.push(atag.attr('href'))
+  end
+end
+
+File.open("novelurl.txt", "w+") do |f|
+  f.puts(novelurl)
+end
